@@ -22,9 +22,11 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.mybatis.generator.api.GeneratedJavaFile;
 import org.mybatis.generator.api.MyBatisGenerator;
+import org.mybatis.generator.config.MergeConstants;
 
 import java.lang.reflect.Array;
 import java.sql.ResultSet;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -110,6 +112,62 @@ public class BugFixedTest {
                 Assert.assertEquals(tb.get("id"), 1L);
             }
         });
+    }
+
+    /**
+     * 集成SelectiveEnhancedPlugin，typeHandler问题
+     * @throws Exception
+     */
+    @Test
+    public void bug0003() throws Exception {
+        MyBatisGeneratorTool tool = MyBatisGeneratorTool.create("scripts/BugFixedTest/bug-0003.xml");
+        tool.generate(() -> DBHelper.createDB("scripts/BugFixedTest/bug-0003.sql"), new AbstractShellCallback() {
+            @Override
+            public void reloadProject(SqlSession sqlSession, ClassLoader loader, String packagz) throws Exception {
+                ObjectUtil tbMapper = new ObjectUtil(sqlSession.getMapper(loader.loadClass(packagz + ".TbMapper")));
+
+                ObjectUtil tb = new ObjectUtil(loader, packagz + ".Tb");
+
+                tb.set("id", 1L);
+                tb.set("field1", new SimpleDateFormat("yyyy-MM-dd").parse("2019-07-08"));
+
+
+                tbMapper.invoke("updateByPrimaryKey", tb.getObject());
+                ResultSet rs = DBHelper.execute(sqlSession.getConnection(), "select field1 from tb where id = 1");
+                rs.first();
+                Assert.assertEquals(rs.getString("field1"), "2019:07:08");
+
+                tb.set("field1", new SimpleDateFormat("yyyy-MM-dd").parse("2019-07-09"));
+                ObjectUtil tbColumnField1 = new ObjectUtil(loader, packagz + ".Tb$Column#field1");
+                Object columns = Array.newInstance(tbColumnField1.getCls(), 1);
+                Array.set(columns, 0, tbColumnField1.getObject());
+
+                tbMapper.invoke("updateByPrimaryKeySelective", tb.getObject(), columns);
+                rs = DBHelper.execute(sqlSession.getConnection(), "select field1 from tb where id = 1");
+                rs.first();
+                Assert.assertEquals(rs.getString("field1"), "2019:07:09");
+            }
+        });
+    }
+
+    /**
+     * 测试domainObjectRenamingRule和
+     */
+    @Test
+    public void bug0004() throws Exception {
+        DBHelper.createDB("scripts/BugFixedTest/bug-0004.sql");
+        // 规则 ^T 替换成空，也就是去掉前缀
+        MyBatisGeneratorTool tool = MyBatisGeneratorTool.create("scripts/BugFixedTest/bug-0004.xml");
+        MyBatisGenerator myBatisGenerator = tool.generate();
+        for (GeneratedJavaFile file : myBatisGenerator.getGeneratedJavaFiles()) {
+            String name = file.getCompilationUnit().getType().getShortName();
+            if (!name.matches("B.*")) {
+                Assert.assertTrue(false);
+            }
+            if (name.endsWith("Example")) {
+                Assert.assertEquals(file.getCompilationUnit().getType().getPackageName(), "com.itfsw.dao.example");
+            }
+        }
     }
 
     /**
@@ -322,6 +380,26 @@ public class BugFixedTest {
                 Assert.assertEquals(rs.getString("field1"), "ts2");
             }
         });
+    }
+
+    /**
+     * 测试批量batchUpsert存在主键的情况
+     * https://github.com/itfsw/mybatis-generator-plugin/issues/77
+     * @throws Exception
+     */
+    @Test
+    public void issues81() throws Exception {
+        MyBatisGeneratorTool tool = MyBatisGeneratorTool.create("scripts/BugFixedTest/issues-81.xml");
+        MyBatisGenerator myBatisGenerator = tool.generate(() -> DBHelper.createDB("scripts/BugFixedTest/issues-81.sql"));
+
+        // 是否在使用系统默认模板
+        int count = 0;
+        for (GeneratedJavaFile file : myBatisGenerator.getGeneratedJavaFiles()) {
+            if (file.getFormattedContent().indexOf(MergeConstants.NEW_ELEMENT_TAG) != -1) {
+                count++;
+            }
+        }
+        Assert.assertTrue(count == 0);
     }
 
     /**

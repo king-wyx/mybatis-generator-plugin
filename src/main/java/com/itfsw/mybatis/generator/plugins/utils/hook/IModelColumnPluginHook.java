@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017.
+ * Copyright (c) 2019.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,32 +14,27 @@
  * limitations under the License.
  */
 
-package com.itfsw.mybatis.generator.plugins;
+package com.itfsw.mybatis.generator.plugins.utils.hook;
 
-import com.itfsw.mybatis.generator.plugins.utils.BasePlugin;
-
-import java.util.Properties;
+import org.mybatis.generator.api.IntrospectedTable;
+import org.mybatis.generator.api.dom.java.InnerEnum;
+import org.mybatis.generator.api.dom.java.TopLevelClass;
 
 /**
  * ---------------------------------------------------------------------------
- * 评论插件
+ *
  * ---------------------------------------------------------------------------
  * @author: hewei
- * @time:2017/6/8 11:21
+ * @time:2019/7/5 14:17
  * ---------------------------------------------------------------------------
  */
-public class CommentPlugin extends BasePlugin {
+public interface IModelColumnPluginHook {
     /**
-     * 模板 property
+     * Model Column 枚举生成
+     * @param innerEnum
+     * @param topLevelClass
+     * @param introspectedTable
+     * @return
      */
-    public static final String PRO_TEMPLATE = "template";
-
-    /**
-     * 插件具体实现查看BasePlugin
-     * @param properties
-     */
-    @Override
-    public void setProperties(Properties properties) {
-        super.setProperties(properties);
-    }
+    boolean modelColumnEnumGenerated(InnerEnum innerEnum, TopLevelClass topLevelClass, IntrospectedTable introspectedTable);
 }

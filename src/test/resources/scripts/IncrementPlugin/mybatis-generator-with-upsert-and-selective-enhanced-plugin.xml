@@ -24,14 +24,13 @@
     <!--导入属性配置 -->
     <context id="default" targetRuntime="MyBatis3">
         <!-- 插件 -->
-        <!-- 注释插件 -->
-        <plugin type="com.itfsw.mybatis.generator.plugins.CommentPlugin">
-            <property name="template" value="src/test/resources/scripts/CommentPlugin/test-comment.ftl"/>
+        <plugin type="com.itfsw.mybatis.generator.plugins.IncrementPlugin" />
+        <plugin type="com.itfsw.mybatis.generator.plugins.UpsertPlugin">
+            <property name="allowMultiQueries" value="true"/>
         </plugin>
+        <plugin type="com.itfsw.mybatis.generator.plugins.ModelColumnPlugin"/>
+        <plugin type="com.itfsw.mybatis.generator.plugins.SelectiveEnhancedPlugin"/>
 
-        <commentGenerator>
-            <property name="suppressAllComments" value="true"/>
-        </commentGenerator>
         <!--jdbc的数据库连接 -->
         <jdbcConnection driverClass="${driver}" connectionURL="${url}" userId="${username}" password="${password}" />
         <!-- Model模型生成器,用来生成含有主键key的类，记录类 以及查询Example类
@@ -53,7 +52,13 @@
 
         <!-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ 要自动生成的表 +++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
         <table tableName="tb">
-            <generatedKey column="id" sqlStatement="MySql" identity="true"/>
+            <property name="incrementColumns" value="inc_f1"/>
+        </table>
+        <table tableName="tb_keys">
+            <property name="incrementColumns" value="inc_f1,inc_f2,inc_f3"/>
+        </table>
+        <table tableName="tb_blobs">
+            <property name="incrementColumns" value="inc_f1,inc_f3"/>
         </table>
     </context>
 </generatorConfiguration>
